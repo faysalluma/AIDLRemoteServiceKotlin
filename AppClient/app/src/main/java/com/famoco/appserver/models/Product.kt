@@ -4,9 +4,9 @@ import android.os.Parcel
 import android.os.Parcelable
 
 data class Product(
-    val name: String,
-    val quantity: Int,
-    val cost: Float) : Parcelable {
+    var name: String,
+    var quantity: Int,
+    var cost: Float) : Parcelable {
 
     companion object {
         @JvmField
@@ -29,4 +29,10 @@ data class Product(
     }
 
     override fun describeContents() = 0
+
+    fun readFromParcel(parcel : Parcel) {
+        this.name = parcel.readString()!!
+        this.quantity = parcel.readInt()
+        this.cost = parcel.readFloat()
+    }
 }

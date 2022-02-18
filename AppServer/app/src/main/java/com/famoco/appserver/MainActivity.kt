@@ -1,6 +1,5 @@
 package com.famoco.appserver
 
-
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
@@ -9,29 +8,44 @@ import android.os.Bundle
 import android.os.IBinder
 import android.os.RemoteException
 import android.util.Log
-import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.famoco.appserver.databinding.ActivityMainBinding
 
 
-class MainActivity : AppCompatActivity(), View.OnClickListener {
+class MainActivity : AppCompatActivity(){
 
-    private lateinit var binding : ActivityMainBinding
-    private var service : IRemoteProductService?=null
+    private lateinit var binding: ActivityMainBinding
+    private var service: IRemoteProductService? = null
     private var serverAppUri = "com.famoco.appserver"
     private val TAG = MainActivity::class.java.simpleName
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding= ActivityMainBinding.inflate(layoutInflater)
+        binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Initialse connection with server
-        initConnection()
+        if (appInstalledOrNot(serverAppUri)) {
+            binding.save.setOnClickListener{
+                var name = binding.name.text.toString()
+                var quantity = binding.quantity.text.toString().toInt()
+                var cost = binding.cost.text.toString().toFloat()
+                try {
+                    service!!.addProduct(name, quantity, cost)
+                    Toast.makeText(applicationContext, "Product added", Toast.LENGTH_SHORT)
+                        .show();
+                } catch (e: RemoteException) {
+                    e.printStackTrace()
+                }
+            }
 
-        binding.save.setOnClickListener(this)
-        binding.view.setOnClickListener(this)
+            binding.view.setOnClickListener{
+                viewAllProducts()
+            }
+        } else {
+            Toast.makeText(applicationContext, "Server App not installed", Toast.LENGTH_SHORT)
+                .show();
+        }
     }
 
     private fun initConnection() {
@@ -48,43 +62,17 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         }
 
         override fun onServiceDisconnected(componentName: ComponentName) {
-            service=null
+            service = null
             Log.d(TAG, "Service Disconnected")
-        }
-    }
-
-    override fun onClick(v: View?) {
-        if (appInstalledOrNot(serverAppUri)) {
-            when (v!!.id) {
-                R.id.save -> {
-                    var name = binding.name.text.toString()
-                    var quantity = binding.quantity.text.toString().toInt()
-                    var cost = binding.cost.text.toString().toFloat()
-                    try {
-                        service!!.addProduct(name, quantity, cost)
-                        Toast.makeText(applicationContext, "Product added", Toast.LENGTH_SHORT).show();
-                    } catch (e: RemoteException) {
-                        e.printStackTrace()
-                    }
-
-                }
-                R.id.view -> {
-                    viewAllProducts()
-                }
-            }
-        }else{
-            Toast.makeText(applicationContext, "Server App not installed", Toast.LENGTH_SHORT).show();
         }
     }
 
     private fun viewAllProducts() {
         try {
-
-            var result=""
+            var result = ""
             val allProducts = service!!.getAllProducts()
-            for (product in allProducts )
-            {
-                result+="Name : ${product.name} Quantity : ${product.quantity} Cost : ${product.cost} \n"
+            for (product in allProducts) {
+                result += "Name : ${product.name} Quantity : ${product.quantity} Cost : ${product.cost} \n"
             }
             binding.result.setText(result)
 
@@ -109,14 +97,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         val pm = packageManager
         val app_installed: Boolean
         app_installed = try {
-            val a = pm.getPackageInfo(uri, PackageManager.GET_ACTIVITIES)
-            val b = a.toString()
+            pm.getPackageInfo(uri, PackageManager.GET_ACTIVITIES)
             true
         } catch (e: PackageManager.NameNotFoundException) {
             false
         }
         return app_installed
     }
-
-
 }

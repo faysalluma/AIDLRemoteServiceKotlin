@@ -6,10 +6,6 @@ import android.os.IBinder
 
 class AdditionService : Service() {
 
-    override fun onCreate() {
-        super.onCreate()
-    }
-
     override fun onBind(intent: Intent): IBinder {
         return mBinder;
     }
